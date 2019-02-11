@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    //border:2px solid #000000; // #d3d3d3
+    background-color: 'white' //#f1f1f1;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+const canvas_width = 800; // Pelikentän leveys
+const canvas_height = 480; // Pelikentän korkeus
+const boxWidth = 35; // Pelikentän leveys
+const boxHeight = 35; // Pelikentän leveys
+
+function startGame() {
+    myGameArea.start();
+				
+	// Piirretään pelialue
+	// line(width, height, color, x, y, m, lwidth, numOfBox
+	line(boxWidth,boxHeight,"black",50,50,1,9);
+	line(105,105,"black",50,50,2,3);
+	// numeronäppäimet
+	line(boxWidth,boxHeight,"black",400,155,1,3);
+	line(105,boxHeight,"black",400,260,1,1);
+	
+	line(140,boxHeight,"black",15*boxWidth+15,50,2,1); // Lataa peli
+	//line(140,boxHeight,"black",15*boxWidth+15,120,2,1); // Talleta peli
+	
+	ctx.font = "24px Arial";
+
+	// numeronäppäimem numerot
+	ctx.fillText("1",410,251);
+	ctx.fillText("2",445,251);
+	ctx.fillText("3",480,251);
+	ctx.fillText("4",410,216);
+	ctx.fillText("5",445,216);
+	ctx.fillText("6",480,216);
+	ctx.fillText("7",410,181);
+	ctx.fillText("8",445,181);
+	ctx.fillText("9",480,181);
+	ctx.fillText("C",445,286);
+	
+	ctx.fillText("Lataa peli",15*boxWidth+20,76);
+	// ctx.fillText("Talleta peli",15*boxWidth+20,146);
+	
+}
+
+
+// Game area
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = canvas_width;
+        this.canvas.height = canvas_height;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+    }
+}
+
+// Piirretään ruudukko
+// width=yhden ruudun leveys, height=Ruudun korkeus, color, x, y, m=modulo, lwidth=viivan paksuus
+//function line(width, height, color, x, y, m, lwidth, numOfBox) {
+function line(width, height, color, x, y, lwidth, numOfBox) {
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;    
+    //this.m = m;    
+    this.lwidth = lwidth;    
+	
+	ctx = myGameArea.context;
+    ctx.fillStyle = color;
+	ctx.beginPath();
+	ctx.lineWidth = this.lwidth;
+	for (var i = 0; i < numOfBox+1; i++) { 
+			ctx.moveTo(i*this.width + this.x, this.y);
+			ctx.lineTo(i*this.width + this.x, numOfBox*this.height+this.y);
+	}
+	for (var j = 0; j < numOfBox+1; j++) { 
+			ctx.moveTo(x, j*this.height + this.y);
+			ctx.lineTo(numOfBox*this.width+this.x, j*this.height + this.y);
+	}
+	ctx.stroke();
+
+}
+
+
+function writeMessage(canvas, message) {
+	context.clearRect(0, 0, canvas.width, 45);
+	context.font = '18pt Calibri';
+	context.fillStyle = 'black';
+	context.fillText(message, 10, 25);
+}
+
+function getMousePos(canvas,evt) {
+	var rect = canvas.getBoundingClientRect();
+	return {
+	  x: evt.clientX - rect.left,
+	  y: evt.clientY - rect.top
+	};
+}
+
+
+   
+var canvas = document.getElementById('canvas');
+var context = myGameArea.canvas.getContext('2d');
+var blueCursorPosx = 0;
+var blueCursorPosy = 0;
+var boxValittu = false;
+var edellKlikNumero = false;
+const numerot = [[7,4,1],[8,5,2],[9,6,3]]; 
+var taulu = [
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0]
+];
+			
+var arvo = 0;
+
+myGameArea.canvas.addEventListener('mousedown', 
+function(evt) {
+	var mousePos = getMousePos(myGameArea.canvas, evt);
+	var cursorPosx = Math.floor((mousePos.x - 50) / boxWidth) + 1; // Vain kokonaisosa (Math.floor)
+	var cursorPosy = Math.floor((mousePos.y - 50) / boxHeight) + 1;
+	//var message = 'Cursor position: ' + cursorPosx + ',' + cursorPosy;
+	// writeMessage(myGameArea.canvas, message);
+	
+	var context = myGameArea.canvas.getContext('2d');
+	
+	// poistetaan edellinen sininen neliö
+	// Ei ajeta kun klikataan ensimmäistä kertaa
+	if (boxValittu && cursorPosx >= 1 && cursorPosx <= 9 && cursorPosy >= 1 && cursorPosy <= 9) {
+		context.strokeStyle = "white";
+		context.beginPath();
+			if (blueCursorPosx >= 1 && blueCursorPosx <= 9 && blueCursorPosy >= 1 && blueCursorPosy <= 9) {
+				arvo = taulu[blueCursorPosx-1][blueCursorPosy-1];
+				tyhjennaRuutu(blueCursorPosx,blueCursorPosy);
+			}
+			context.fillStyle = "black";
+			if (arvo > 0) {
+				kirjoitaArvoRuutuun (blueCursorPosx, blueCursorPosy, arvo);
+				arvo = 0;
+			}
+			
+		context.stroke();
+		edellKlikNumero = false;
+	}
+
+	// piirretään sininen neliö
+	piirraVarillinenNelio (cursorPosx, cursorPosy, 'blue');
+	
+	// painetaan numeronäppäintä // const numerot = [[7,4,1],[8,5,2],[9,6,3]];
+	if (cursorPosx >= 11 && cursorPosx <= 13 && cursorPosy >= 4 && cursorPosy <= 6) {
+		for (var i = 11; i <= 13; i++) {
+			for (var j = 4; j <= 6; j++) {
+				if (cursorPosx == i && cursorPosy == j) {
+					// Klikataan numeroita peräkkäin
+					if (edellKlikNumero) {
+						tyhjennaRuutu(blueCursorPosx,blueCursorPosy);
+					}
+					if (blueCursorPosx >= 1 && blueCursorPosx <= 9 && blueCursorPosy >= 1 && blueCursorPosy <= 9) {
+						kirjoitaArvoRuutuun (blueCursorPosx, blueCursorPosy,numerot[i-11][j-4]);
+						if (onkoJoNumeroa(blueCursorPosx, blueCursorPosy,numerot[i-11][j-4])) {
+							piirraVarillinenNelio (blueCursorPosx, blueCursorPosy, 'red');
+						}
+						else {
+							piirraVarillinenNelio (blueCursorPosx, blueCursorPosy, 'blue');
+						}
+					}
+					taulu[blueCursorPosx-1][blueCursorPosy-1] = numerot[i-11][j-4]; // talletetaan arvo tauluun
+					arvo = numerot[i-11][j-4];
+					edellKlikNumero = true;
+				}
+			}
+		}
+	}
+	// Painetaan C
+	if (cursorPosx >= 11 && cursorPosx <= 13 && cursorPosy == 7) {
+		taulu[blueCursorPosx-1][blueCursorPosy-1] = 0; // poistetaan arvo taulusta (merkitään nollaksi).
+		tyhjennaRuutu(blueCursorPosx,blueCursorPosy);
+		arvo = 0;
+	}
+
+	// Lataa peli
+	if (cursorPosx >= 15 && cursorPosx <= 18 && cursorPosy == 1) {
+		lataaPeli();
+		
+	}
+
+		
+	
+	
+}, false);
+
+function tyhjennaRuutu (cursorPosxx, cursorPosyy) {
+		var context = myGameArea.canvas.getContext('2d');
+		context.clearRect(51 + (cursorPosxx-1)*boxWidth,51 + (cursorPosyy-1)*boxHeight,33,33);
+		context.stroke();
+		return;
+}
+function piirraVarillinenNelio (cursorPosxx, cursorPosyy, color) {
+	var context = myGameArea.canvas.getContext('2d');
+	context.beginPath();
+	context.strokeStyle = color;
+	if (cursorPosxx >= 1 && cursorPosxx <= 9 && cursorPosyy >= 1 && cursorPosyy <= 9) {
+	
+		context.rect(52 + (cursorPosxx-1) * boxWidth, 52+ (cursorPosyy-1) * boxHeight, 31, 31);
+		blueCursorPosx = cursorPosxx; // valitun boxin x
+		blueCursorPosy = cursorPosyy; // valitun boxin y
+	}
+	context.stroke();
+	boxValittu = true;
+	return;
+}
+
+function kirjoitaArvoRuutuun (cursorPosxx, cursorPosyy,arvo) {
+	context.fillText(arvo,50 + (cursorPosxx-1)*boxWidth +10,50 + (cursorPosyy-1)*boxHeight +24);
+	return;
+}
+
+
+// Tarkistetaan, onko syötetty numero jo pystyrivillä, vaakarivillä tai 3x3 alueella
+function onkoJoNumeroa (cursorPosxx, cursorPosyy,arvo) {
+	var loytyi = false;
+	var nelio3x3x = 0;
+	var nelio3x3y = 0;
+	// Pystyrivi // Vaakarivi
+	// Käy rivi läpi
+	for (var i = 0; i < 9; i++){
+		// Tarkista onko numero jo rivillä
+		if (arvo == taulu[cursorPosxx-1][i] || arvo == taulu[i][cursorPosyy-1]) {
+			// On jo
+			loytyi = true;
+			break;
+		}	
+	}
+	
+	// 3x3
+	nelio3x3x = Math.floor(cursorPosxx / 3);
+	nelio3x3y = Math.floor(cursorPosyy / 3);
+		for (var j = 0; j < 3; j++){
+			for (var k = 0; k < 3; k++){
+					
+				// Tarkista onko numero jo 3x3 alueella
+				if (arvo == taulu[Math.floor((cursorPosxx-1) / 3) * 3 + j][Math.floor((cursorPosyy-1) / 3) * 3 + k]) {
+					// On jo
+					loytyi = true;
+					break;
+				}
+			}
+		}
+	
+	return loytyi;
+}
+
+// latPpeli() lataa tällä hetkellä vain yhden pelin.
+// Tavoite on, että pelejä voisi ladata tietokannasta.
+function lataaPeli() {
+
+taulu = [
+	[0,4,0,5,6,0,0,9,0],
+	[0,7,0,1,9,0,0,0,6],
+	[9,0,0,0,2,7,0,0,1],
+	[0,2,0,0,0,8,1,0,0],
+	[1,8,0,0,0,0,0,2,9],
+	[0,0,7,2,0,0,0,3,0],
+	[4,0,0,9,8,0,0,0,7],
+	[6,0,0,0,3,1,0,4,0],
+	[0,0,0,0,5,6,0,1,0]
+];
+
+for (var i = 0; i < 9; i++) {
+	for (var j = 0; j < 9; j++) {
+		tyhjennaRuutu(i+1,j+1);
+		if (taulu[i][j] > 0) {
+			kirjoitaArvoRuutuun(i+1,j+1,taulu[i][j]);
+		}
+	}
+}
+
+	return;
+}
+
+
+    </script>
+	
+  </body>
+</html>
